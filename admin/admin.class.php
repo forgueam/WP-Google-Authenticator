@@ -297,8 +297,11 @@ class WPGA_Admin {
 			// If forced use is limited to specific roles,
 			// don't show the message if user isn't part of one of those roles
 			$forced_roles = $this->settings->getOption( 'force_2fa_roles' );
-			if ( !empty( $forced_roles ) && empty( array_intersect( $forced_roles, $user->roles ) ) )
-				return;
+			if ( !empty( $forced_roles ) ) {
+				$applicable_roles = array_intersect( $forced_roles, $user->roles );
+				if ( empty( $applicable_roles ) )
+					return;
+			}
 			
 			if( '' == $secret ) {
 
@@ -528,8 +531,9 @@ class WPGA_Admin {
 
 			// If forced use is limited to specific roles,
 			// don't force TOTP if user isn't part of one of those roles
-			if ( $is_forced ) {
-				if ( !empty( $options['force_2fa_roles'] ) && empty( array_intersect( $options['force_2fa_roles'], $user->roles ) ) )
+			if ( $is_forced && !empty( $options['force_2fa_roles'] ) ) {
+				$applicable_roles = array_intersect( $options['force_2fa_roles'], $user->roles );
+				if ( empty( $applicable_roles ) )
 					$is_forced = false;
 			}
 
@@ -645,15 +649,19 @@ class WPGA_Admin {
 
 		// If activation is limited to specific roles,
 		// don't show settings if user isn't part of one of those roles
-		if ( !empty( $options['active_roles'] ) && empty( array_intersect( $options['active_roles'], $user->roles ) ) )
-			return;
+		if ( !empty( $options['active_roles'] ) ) {
+			$applicable_roles = array_intersect( $options['active_roles'], $user->roles );
+			if ( empty( $applicable_roles ) )
+				return;
+		}
 
 		$is_forced = ( isset( $options['force_2fa'] ) && is_array( $options['force_2fa'] ) && in_array( 'yes', $options['force_2fa'] ) );
 
 		// If forced use is limited to specific roles,
 		// don't force TOTP if user isn't part of one of those roles
-		if ( $is_forced ) {
-			if ( !empty( $options['force_2fa_roles'] ) && empty( array_intersect( $options['force_2fa_roles'], $user->roles ) ) )
+		if ( $is_forced && !empty( $options['force_2fa_roles'] ) ) {
+			$applicable_roles = array_intersect( $options['force_2fa_roles'], $user->roles );
+			if ( empty( $applicable_roles ) )
 				$is_forced = false;
 		}
 
