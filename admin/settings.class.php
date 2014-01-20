@@ -271,7 +271,7 @@ class TAV_Settings {
 
 					<label for="<?php echo $id; ?>">
 						<input type="checkbox" id="<?php echo $id; ?>" name="<?php echo $this->option . '[' . $field['id'] . ']'; ?>[]" value="<?php echo $val; ?>" <?php echo $checked; ?>> <?php echo $title; ?>
-					</label>
+					</label><br />
 
 				<?php endforeach;
 

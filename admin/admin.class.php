@@ -109,6 +109,8 @@ class WPGA_Admin {
 	 */
 	public function registerSettings() {
 
+		$roles = $this->getUserRoles();
+
 		$this->settings->addSection( 'general', 'general' );
 		$this->settings->addSection( 'security', 'security' );
 
@@ -122,11 +124,29 @@ class WPGA_Admin {
 		);
 
 		$this->settings->addOption( 'general', array(
+			'id' 		=> 'active_roles',
+			'title' 	=> __( 'Limit Active Roles', 'wpga' ),
+			'desc' 		=> __( 'Do you wish to only enable the 2-factor authentication for specific user roles?', 'wpga' ),
+			'field' 	=> 'checkbox',
+			'opts' 		=> $roles
+			)
+		);
+
+		$this->settings->addOption( 'general', array(
 			'id' 		=> 'force_2fa',
 			'title' 	=> __( 'Force Use', 'wpga' ),
 			'desc' 		=> __( 'Do you want to force your users to use 2-factor authentication (admins AND you included)?', 'wpga' ),
 			'field' 	=> 'checkbox',
 			'opts' 		=> array( 'yes' => __( 'Yes', 'wpga' ) )
+			)
+		);
+
+		$this->settings->addOption( 'general', array(
+			'id' 		=> 'force_2fa_roles',
+			'title' 	=> __( 'Limit Forced Roles', 'wpga' ),
+			'desc' 		=> __( 'Do you want to only force 2-factor authentication for specific user roles?', 'wpga' ),
+			'field' 	=> 'checkbox',
+			'opts' 		=> $roles
 			)
 		);
 
@@ -759,6 +779,17 @@ class WPGA_Admin {
 			</label>
 		</p>
 		<?php
+	}
+
+	private function getUserRoles() {
+
+		$roles = array();
+
+		foreach ( $GLOBALS['wp_roles']->role_names as $index => $name ) {
+			$roles[$index] = __( $name, 'wpga' );
+		}
+
+		return $roles;
 	}
 
 }
