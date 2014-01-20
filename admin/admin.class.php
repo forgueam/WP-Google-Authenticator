@@ -293,6 +293,12 @@ class WPGA_Admin {
 			$max_attempts 	= (int)$this->settings->getOption( 'max_attempts', $this->def_attempt );
 			$attempts 		= (int)get_user_meta( $user->ID, 'wpga_attempts', true );
 			$left 			= $max_attempts-$attempts;
+
+			// If forced use is limited to specific roles,
+			// don't show the message if user isn't part of one of those roles
+			$forced_roles = $this->settings->getOption( 'force_2fa_roles' );
+			if ( !empty( $forced_roles ) && empty( array_intersect( $forced_roles, $user->roles ) ) )
+				return;
 			
 			if( '' == $secret ) {
 
@@ -514,13 +520,21 @@ class WPGA_Admin {
 		if( !is_wp_error( $user ) ) {
 
 			$username 	= $user->data->user_login;
-			$options	= get_option( 'wpga_options', array() );
 			$secret 	= get_user_meta( $user->ID, 'wpga_secret', true );
 			$active 	= get_user_meta( $user->ID, 'wpga_active', true );
 			$totp 		= sanitize_key( $_POST['totp'] );
 
+			$is_forced = ( isset( $options['force_2fa'] ) && is_array( $options['force_2fa'] ) && in_array( 'yes', $options['force_2fa'] ) );
+
+			// If forced use is limited to specific roles,
+			// don't force TOTP if user isn't part of one of those roles
+			if ( $is_forced ) {
+				if ( !empty( $options['force_2fa_roles'] ) && empty( array_intersect( $options['force_2fa_roles'], $user->roles ) ) )
+					$is_forced = false;
+			}
+
 			/* TOTP is forced for all users */
-			if( ( isset( $options['force_2fa'] ) && is_array( $options['force_2fa'] ) && in_array( 'yes', $options['force_2fa'] ) ) || 'yes' == $active ) {
+			if( $is_forced || 'yes' == $active ) {
 
 				/* Let's make sure the user has generated a secret */
 				if( '' != $secret ) {
@@ -554,7 +568,6 @@ class WPGA_Admin {
 
 				} else {
 
-					$options 		= get_option( 'wpga_options', array() );
 					$attempts 		= (int)get_user_meta( $user->ID, 'wpga_attempts', true );
 					$max_attempts 	= ( isset( $options['max_attempts'] ) && '' != $options['max_attempts'] ) ? $options['max_attempts'] : $this->def_attempt;
 
@@ -623,8 +636,28 @@ class WPGA_Admin {
 	 */
 	public function addUserProfileFields( $user ) {
 
+		$options = get_option( 'wpga_options', array() );
+
+		// If not active, don't show settings
+		$is_active = ( isset( $options['active'] ) && is_array( $options['active'] ) && in_array( 'yes', $options['active'] ) );
+		if ( !$is_active )
+			return;
+
+		// If activation is limited to specific roles,
+		// don't show settings if user isn't part of one of those roles
+		if ( !empty( $options['active_roles'] ) && empty( array_intersect( $options['active_roles'], $user->roles ) ) )
+			return;
+
+		$is_forced = ( isset( $options['force_2fa'] ) && is_array( $options['force_2fa'] ) && in_array( 'yes', $options['force_2fa'] ) );
+
+		// If forced use is limited to specific roles,
+		// don't force TOTP if user isn't part of one of those roles
+		if ( $is_forced ) {
+			if ( !empty( $options['force_2fa_roles'] ) && empty( array_intersect( $options['force_2fa_roles'], $user->roles ) ) )
+				$is_forced = false;
+		}
+
 		add_thickbox();
-		$force 	= $this->settings->getOption( 'force_2fa' );
 		$qr 	= true;
 		$width 	= $this->qr_width+10;
 		$height	= $this->qr_height+10;
@@ -645,7 +678,7 @@ class WPGA_Admin {
 
 		<table class="form-table">
 
-			<?php if( !$force || $force && is_array( $force ) && !in_array( 'yes', $force ) ):
+			<?php if( !$is_forced ):
 
 				$active = esc_attr( get_the_author_meta( 'wpga_active', $user->ID ) );
 
